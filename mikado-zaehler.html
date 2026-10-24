@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Mikado Zähler</title>
+<style>
+  :root{
+    --table:#12100C; --surface:#1D1A14; --surface-2:#272219; --line:#3A3227;
+    --bamboo:#E3C489; --ink:#F5EFE3; --muted:#9A9081;
+    --rot:#E24C3C; --blau:#1D6E96; --gelb:#F2CD4B; --gold:#D9B25A;
+    --stick-h:74px;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{background:#12100C;color-scheme:dark;min-height:100%}
+  html,body{margin:0;padding:0}
+  body{background:#12100C;background:var(--table);color:var(--ink);font-family:var(--sans);
+    font-size:17px;line-height:1.4;min-height:100vh}
+  .wrap{max-width:600px;margin:0 auto;padding:20px 16px 32px}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:20px}
+  h1{font-weight:800;font-size:30px;letter-spacing:-.01em;margin:0}
+  h1 .kanji{color:var(--gold);font-weight:400;margin-right:10px}
+  .sub{color:var(--muted);font-size:12px;margin:2px 0 0;font-family:var(--mono)}
+  .badge{font-family:var(--mono);font-size:12px;color:var(--gold);
+    border:1px solid var(--line);border-radius:20px;padding:5px 12px;white-space:nowrap}
+  label{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);font-family:var(--mono);margin:0 0 8px}
+  input[type=text]{width:100%;padding:15px 14px;border-radius:12px;border:1px solid var(--line);
+    background:var(--surface-2);color:var(--ink);font-size:18px;font-family:inherit}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  .btn{display:block;width:100%;padding:17px;border-radius:14px;font-size:18px;font-weight:700;
+    background:var(--bamboo);color:#1A150D}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--muted);
+    font-size:15px;padding:14px;border-radius:12px;width:100%}
+  .btn-ghost:disabled{opacity:.3}
+  .btn-ghost.strong{color:var(--ink);border-color:var(--bamboo)}
+  .seg{display:flex;gap:8px;margin-bottom:22px}
+  .seg button{flex:1;padding:15px 0;border-radius:12px;border:1px solid var(--line);
+    background:var(--surface);font-family:var(--mono);font-size:16px;color:var(--muted)}
+  .seg button[aria-pressed=true]{background:var(--surface-2);color:var(--ink);border-color:var(--gold)}
+  .name-field{margin-bottom:12px}
+  .hint{color:var(--muted);font-size:13px;margin:-14px 0 22px}
+  .stick{width:13px;height:var(--stick-h);border-radius:7px;flex:none;position:relative;overflow:hidden;
+    background:linear-gradient(90deg,#B69257 0%,var(--bamboo) 35%,#F0DCB4 55%,#B08B52 100%)}
+  .bands{position:absolute;left:0;right:0;top:12%;bottom:12%}
+  .bands i{position:absolute;left:0;right:0;display:block}
+  .players{display:flex;flex-direction:column;gap:9px;margin-bottom:20px}
+  .player{display:flex;align-items:center;gap:12px;padding:15px;background:var(--surface);
+    border:1px solid var(--line);border-radius:14px;width:100%;text-align:left}
+  .player[aria-current=true]{border-color:var(--gold);background:var(--surface-2)}
+  .player .dot{width:8px;height:8px;border-radius:50%;background:transparent;flex:none}
+  .player[aria-current=true] .dot{background:var(--gold)}
+  .player .nm{flex:1;font-size:19px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .player .tot{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .player .pts{font-family:var(--mono);font-size:23px;font-weight:600;min-width:56px;text-align:right}
+  .player[aria-current=true] .pts{color:var(--gold)}
+  .rack-label{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 12px;gap:10px}
+  .rack-label span{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .rack{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .pick{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:9px;
+    min-height:150px;padding:14px 4px 12px;background:var(--surface);border:1px solid var(--line);
+    border-radius:14px}
+  .pick .val{font-family:var(--mono);font-size:17px;font-weight:600;line-height:1}
+  .pick .left{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1}
+  .pick .nm{font-size:11px;color:var(--muted);line-height:1}
+  .pick[disabled]{opacity:.22}
+  .pick.flash{border-color:var(--gold)}
+  .toolbar{display:flex;gap:9px;margin-top:18px}
+  .toolbar .btn-ghost{flex:1}
+  .progress{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden;margin:20px 0 7px}
+  .progress i{display:block;height:100%;background:var(--gold)}
+  .progress-txt{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
+  .footer-actions{margin-top:22px;display:flex;flex-direction:column;gap:9px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .winner{text-align:center;padding:30px 16px 24px}
+  .winner .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted)}
+  .winner .nm{font-size:34px;font-weight:800;margin:8px 0 3px;line-height:1.1}
+  .winner .pts{font-family:var(--mono);font-size:15px;color:var(--gold)}
+  .result-row{display:flex;align-items:center;gap:12px;padding:14px 15px;border-top:1px solid var(--line)}
+  .result-row .rank{font-family:var(--mono);color:var(--muted);font-size:14px;width:20px}
+  .result-row .nm{flex:1;font-size:18px}
+  .result-row .brk{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .result-row .pts{font-family:var(--mono);font-size:20px;font-weight:600;min-width:50px;text-align:right}
+  .section-head{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);padding:14px 15px 10px;background:var(--surface-2)}
+  .series-row{display:flex;align-items:center;gap:12px;padding:12px 15px;border-top:1px solid var(--line)}
+  .series-row .nm{flex:1}
+  .series-row .wins{font-family:var(--mono);font-size:12px;color:var(--gold);min-width:58px;text-align:right}
+  .series-row .sum{font-family:var(--mono);font-size:18px;font-weight:600;min-width:56px;text-align:right}
+  .crown{color:var(--gold)}
+  .hidden{display:none}
+  @media (min-width:820px){
+    :root{--stick-h:104px}
+    .wrap{max-width:1060px;padding:32px 28px 40px}
+    h1{font-size:38px}
+    .game-grid{display:grid;grid-template-columns:minmax(300px,1fr) 1.25fr;gap:32px;align-items:start}
+    .players{margin-bottom:0}
+    .player{padding:19px 18px}
+    .player .nm{font-size:22px}
+    .player .pts{font-size:27px;min-width:66px}
+    .pick{min-height:210px;padding:18px 6px 16px}
+    .pick .val{font-size:20px}
+    .pick .nm{font-size:13px}
+    .rack{gap:12px}
+    .setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 32px}
+    .setup-grid .full{grid-column:1 / -1}
+    .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="kanji">御</span>Mikado</h1>
+      <p class="sub" id="subline">41 Stäbchen · 170 Punkte</p>
+    </div>
+    <div class="badge hidden" id="roundBadge"></div>
+  </header>
+
+  <section id="setup">
+    <div class="setup-grid">
+      <div>
+        <label>Wie viele spielen mit?</label>
+        <div class="seg" id="countPick">
+          <button data-n="2" aria-pressed="false">2</button>
+          <button data-n="3" aria-pressed="false">3</button>
+          <button data-n="4" aria-pressed="true">4</button>
+        </div>
+        <label>Wie wird gezählt?</label>
+        <div class="seg" id="modePick">
+          <button data-mode="points" aria-pressed="true">Punkte</button>
+          <button data-mode="sticks" aria-pressed="false">Stäbchen</button>
+        </div>
+        <p class="hint" id="modeHint"></p>
+      </div>
+      <div>
+        <label>Namen</label>
+        <div id="nameFields"></div>
+      </div>
+      <div class="full">
+        <button class="btn" id="startBtn">Spiel starten</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="game" class="hidden">
+    <div class="game-grid">
+      <div>
+        <label>Wer ist dran? (antippen zum Wechseln)</label>
+        <div class="players" id="playerList"></div>
+      </div>
+      <div>
+        <div class="rack-label">
+          <label style="margin:0">Stäbchen für <b id="activeName" style="color:var(--ink)"></b></label>
+          <span id="poolLeft"></span>
+        </div>
+        <div class="rack" id="rack"></div>
+        <div class="toolbar">
+          <button class="btn-ghost" id="undoBtn">Rückgängig</button>
+          <button class="btn-ghost strong" id="nextBtn">Nächster</button>
+        </div>
+        <div class="progress"><i id="progBar" style="width:0%"></i></div>
+        <div class="progress-txt" id="progTxt"></div>
+        <div class="footer-actions">
+          <button class="btn-ghost" id="finishBtn">Runde auswerten</button>
+          <button class="btn-ghost" id="abortBtn" style="border-color:transparent">Serie beenden</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="result" class="hidden">
+    <div class="result-grid">
+      <div class="card">
+        <div class="winner">
+          <div class="eyebrow" id="winEyebrow"></div>
+          <div class="nm" id="winName"></div>
+          <div class="pts" id="winPts"></div>
+        </div>
+        <div id="resultList"></div>
+      </div>
+      <div class="card hidden" id="seriesCard">
+        <div class="section-head" id="seriesHead"></div>
+        <div id="seriesList"></div>
+      </div>
+    </div>
+    <div class="footer-actions">
+      <button class="btn" id="againBtn">Nächste Runde</button>
+      <button class="btn-ghost" id="newBtn">Serie beenden · neue Spieler</button>
+    </div>
+  </section>
+</div>
+
+<script>
+var TYPES = [
+  { id:"mikado", name:"Mikado", pts:20, total:1,
+    bands:[{top:"0%",h:"100%",style:"repeating-linear-gradient(38deg, var(--blau) 0 3px, transparent 3px 8px)"}] },
+  { id:"mandarin", name:"Mandarin", pts:10, total:5,
+    bands:[{top:"6%",h:"13%",c:"var(--rot)"},{top:"44%",h:"14%",c:"var(--blau)"},
+           {top:"81%",h:"13%",c:"var(--rot)"}] },
+  { id:"bonze", name:"Bonze", pts:5, total:5,
+    bands:[{top:"0%",h:"16%",c:"var(--rot)"},{top:"21%",h:"16%",c:"var(--blau)"},
+           {top:"42%",h:"16%",c:"var(--rot)"},{top:"63%",h:"16%",c:"var(--blau)"},
+           {top:"84%",h:"16%",c:"var(--rot)"}] },
+  { id:"samurai", name:"Samurai", pts:3, total:15,
+    bands:[{top:"5%",h:"10%",c:"var(--blau)"},{top:"38%",h:"24%",c:"var(--gelb)"},
+           {top:"85%",h:"10%",c:"var(--rot)"}] },
+  { id:"kuli", name:"Kuli", pts:2, total:15,
+    bands:[{top:"22%",h:"14%",c:"var(--rot)"},{top:"64%",h:"14%",c:"var(--blau)"}] }
+];
+var TOTAL_STICKS = 41, TOTAL_PTS = 170;
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+var series = null, round = null, playerCount = 4, mode = "points";
+var MODE_HINT = {
+  points:"Mikado 20 · Mandarin 10 · Bonze 5 · Samurai 3 · Kuli 2",
+  sticks:"Jedes Stäbchen zählt 1 — die einfache Variante."
+};
+function valueOf(t){ return mode === "points" ? t.pts : 1; }
+function maxScore(){ return mode === "points" ? TOTAL_PTS : TOTAL_STICKS; }
+function unitName(){ return mode === "points" ? "Punkten" : "Stäbchen"; }
+
+function renderNameFields(){
+  var old = [], i;
+  for(i=0;i<4;i++){ old.push($("name"+i) ? $("name"+i).value : ""); }
+  var html = "";
+  for(i=0;i<playerCount;i++){
+    html += '<div class="name-field"><input type="text" id="name'+i+'" placeholder="Spieler '+(i+1)+
+            '" value="'+esc(old[i]||"")+'" autocomplete="off" maxlength="18"></div>';
+  }
+  $("nameFields").innerHTML = html;
+}
+function renderModeHint(){ $("modeHint").textContent = MODE_HINT[mode]; }
+
+$("countPick").addEventListener("click", function(e){
+  var b = e.target.closest("button[data-n]"); if(!b) return;
+  playerCount = +b.dataset.n;
+  var kids = $("countPick").children;
+  for(var i=0;i<kids.length;i++){ kids[i].setAttribute("aria-pressed", kids[i]===b ? "true":"false"); }
+  renderNameFields();
+});
+$("modePick").addEventListener("click", function(e){
+  var b = e.target.closest("button[data-mode]"); if(!b) return;
+  mode = b.dataset.mode;
+  var kids = $("modePick").children;
+  for(var i=0;i<kids.length;i++){ kids[i].setAttribute("aria-pressed", kids[i]===b ? "true":"false"); }
+  renderModeHint();
+});
+renderNameFields(); renderModeHint();
+
+$("startBtn").addEventListener("click", function(){
+  var names = [];
+  for(var i=0;i<playerCount;i++){
+    var v = $("name"+i).value.trim();
+    names.push(v || ("Spieler "+(i+1)));
+  }
+  series = { names:names, rounds:[] };
+  newRound(0);
+});
+
+function emptyCounts(){
+  var o = {}; TYPES.forEach(function(t){ o[t.id] = 0; }); return o;
+}
+function newRound(startPlayer){
+  round = { players: series.names.map(function(){ return { counts:emptyCounts() }; }),
+            active: startPlayer % series.names.length,
+            history: [] };
+  renderRack(); show("game"); renderGame();
+}
+function show(which){
+  ["setup","game","result"].forEach(function(s){
+    $(s).className = (s === which) ? "" : "hidden";
+  });
+  $("roundBadge").className = (which === "setup") ? "badge hidden" : "badge";
+  if(which === "game") $("roundBadge").textContent = "Runde " + (series.rounds.length + 1);
+  if(which === "result") $("roundBadge").textContent = series.rounds.length + " Runden";
+  $("subline").textContent = mode === "points" ? "41 Stäbchen · 170 Punkte" : "41 Stäbchen · je 1 Punkt";
+  window.scrollTo(0,0);
+}
+
+function scoreOf(p){ var s=0; TYPES.forEach(function(t){ s += p.counts[t.id]*valueOf(t); }); return s; }
+function takenOf(t){ var s=0; round.players.forEach(function(p){ s += p.counts[t.id]; }); return s; }
+function takenTotal(){ var s=0; TYPES.forEach(function(t){ s += takenOf(t); }); return s; }
+function seriesTotal(i){ var s=0; series.rounds.forEach(function(r){ s += r.scores[i]; }); return s; }
+function seriesWins(i){
+  return series.rounds.filter(function(r){ return r.scores[i] === Math.max.apply(null, r.scores); }).length;
+}
+function stickHTML(t){
+  var b = t.bands.map(function(x){
+    return '<i style="top:'+x.top+';height:'+x.h+';background:'+(x.style||x.c)+'"></i>'; }).join("");
+  return '<span class="stick"><span class="bands">'+b+'</span></span>';
+}
+function renderRack(){
+  $("rack").innerHTML = TYPES.map(function(t){
+    return '<button class="pick" data-type="'+t.id+'">'+stickHTML(t)+
+      '<span class="val">'+valueOf(t)+'</span>'+
+      '<span class="left" data-left="'+t.id+'"></span>'+
+      '<span class="nm">'+t.name+'</span></button>';
+  }).join("");
+}
+function renderGame(){
+  $("playerList").innerHTML = round.players.map(function(p,i){
+    var tot = series.rounds.length ? '<span class="tot">gesamt '+seriesTotal(i)+'</span>' : "";
+    return '<button class="player" data-i="'+i+'" aria-current="'+(i===round.active)+'">'+
+      '<span class="dot"></span><span class="nm">'+esc(series.names[i])+'</span>'+tot+
+      '<span class="pts">'+scoreOf(p)+'</span></button>';
+  }).join("");
+  $("activeName").textContent = series.names[round.active];
+  TYPES.forEach(function(t){
+    document.querySelector('[data-left="'+t.id+'"]').textContent = takenOf(t) + "×";
+  });
+  var used = takenTotal();
+  $("poolLeft").textContent = used + " aufgenommen";
+  $("progBar").style.width = Math.min(100, used / TOTAL_STICKS * 100) + "%";
+  $("progTxt").textContent = used + " Stäbchen · Richtwert " + TOTAL_STICKS;
+  $("undoBtn").disabled = (round.history.length === 0);
+}
+$("rack").addEventListener("click", function(e){
+  var b = e.target.closest(".pick"); if(!b) return;
+  var id = b.dataset.type;
+  round.players[round.active].counts[id]++;
+  round.history.push({ player: round.active, type: id });
+  b.classList.add("flash");
+  setTimeout(function(){ b.classList.remove("flash"); }, 180);
+  renderGame();
+});
+$("playerList").addEventListener("click", function(e){
+  var b = e.target.closest(".player"); if(!b) return;
+  round.active = +b.dataset.i; renderGame();
+});
+$("nextBtn").addEventListener("click", function(){
+  round.active = (round.active + 1) % round.players.length; renderGame();
+});
+$("undoBtn").addEventListener("click", function(){
+  var last = round.history.pop(); if(!last) return;
+  round.players[last.player].counts[last.type]--;
+  round.active = last.player;
+  renderGame();
+});
+$("finishBtn").addEventListener("click", finish);
+$("abortBtn").addEventListener("click", function(){ series = null; show("setup"); });
+
+function finish(){
+  var scores = round.players.map(scoreOf);
+  var counts = round.players.map(function(p){ return Object.assign({}, p.counts); });
+  series.rounds.push({ scores: scores, counts: counts });
+
+  var ranked = series.names.map(function(n,i){
+    return { name:n, pts:scores[i], counts:counts[i] };
+  }).sort(function(a,b){ return b.pts - a.pts; });
+
+  var best = ranked[0].pts;
+  var tie = ranked.filter(function(r){ return r.pts === best; });
+  $("winEyebrow").textContent = "Runde " + series.rounds.length;
+  $("winName").textContent = tie.length > 1 ? tie.map(function(t){ return t.name; }).join(" & ") : ranked[0].name;
+  $("winPts").textContent = (tie.length > 1 ? "Gleichstand · " : "") + best + " von " + maxScore() + " " + unitName();
+
+  $("resultList").innerHTML = ranked.map(function(r,i){
+    var brk = TYPES.filter(function(t){ return r.counts[t.id] > 0; })
+      .map(function(t){ return r.counts[t.id] + "× " + t.name; }).join(" · ") || "nichts aufgenommen";
+    return '<div class="result-row"><span class="rank">'+(i+1)+'</span>'+
+      '<span class="nm">'+esc(r.name)+'<br><span class="brk">'+brk+'</span></span>'+
+      '<span class="pts">'+r.pts+'</span></div>';
+  }).join("");
+
+  if(series.rounds.length > 1){
+    $("seriesCard").className = "card";
+    $("seriesHead").textContent = "Gesamtstand nach " + series.rounds.length + " Runden";
+    var totals = series.names.map(function(n,i){
+      return { name:n, sum:seriesTotal(i), wins:seriesWins(i) };
+    }).sort(function(a,b){ return b.sum - a.sum; });
+    var top = totals[0].sum;
+    $("seriesList").innerHTML = totals.map(function(t){
+      return '<div class="series-row"><span class="nm">'+
+        (t.sum === top ? '<span class="crown">★</span> ' : '')+esc(t.name)+'</span>'+
+        '<span class="wins">'+t.wins+'× Sieg</span><span class="sum">'+t.sum+'</span></div>';
+    }).join("");
+  } else {
+    $("seriesCard").className = "card hidden";
+  }
+  show("result");
+}
+$("againBtn").addEventListener("click", function(){ newRound(series.rounds.length); });
+$("newBtn").addEventListener("click", function(){ series = null; show("setup"); });
+</script>
+</body>
+</html>
