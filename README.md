@@ -1,6 +1,8 @@
 # Mikado Zähler
 
-Eine Progressive Web App (PWA) zum Zählen von Mikado-Aufnahmen — für 2–4 Spieler, mit Serien-Tracking. Optimiert für iPhone und iPad: Nutzung am Esstisch, auch von Kindern.
+Eine Progressive Web App (PWA) zum Zählen von Mikado-Aufnahmen: für 2 bis 4 Spieler, mit Serien-Tracking. Optimiert für iPhone und iPad, Nutzung am Esstisch, auch von Kindern.
+
+**Live: [https://romanmesicek.github.io/mikado-counter/mikado-zaehler.html](https://romanmesicek.github.io/mikado-counter/mikado-zaehler.html)**
 
 ## Features
 
@@ -26,18 +28,15 @@ Einfach `mikado-zaehler.html` öffnen — fertig. Kein Server, keine Installatio
 
 ## Deployment (GitHub Pages)
 
-Das Repo enthält einen GitHub-Actions-Workflow (`.github/workflows/deploy.yml`), der die App bei jedem Push auf `main` automatisch auf GitHub Pages veröffentlicht.
+Ein GitHub-Actions-Workflow (`.github/workflows/deploy.yml`) veröffentlicht die App bei jedem Push auf `main` automatisch neu auf GitHub Pages.
 
-Einrichtung (einmalig):
-
-1. **Settings → Pages → Source: GitHub Actions** auswählen
-2. Pushen — der Workflow deployed automatisch
-
-Die App ist danach erreichbar unter:
+Die App läuft hier:
 
 ```
-https://<username>.github.io/mikado-counter/mikado-zaehler.html
+https://romanmesicek.github.io/mikado-counter/mikado-zaehler.html
 ```
+
+Einrichtung (bereits erledigt): **Settings → Pages → Source: GitHub Actions**. Wird der Workflow-Status in der README angezeigt, garantiert das grüne Häkchen, dass die Live-Seite dem aktuellen Stand entspricht.
 
 ## Projektstruktur
 
